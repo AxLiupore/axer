@@ -4,6 +4,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"syscall"
 )
 
@@ -26,6 +27,9 @@ func NewParentProcess(tty bool) (*exec.Cmd, *os.File) {
 	}
 	// ParentProcess send readPipe to childProcess
 	cmd.ExtraFiles = []*os.File{readPipe}
+	pwd, err := os.Getwd()
+	// this is image's path
+	cmd.Dir = filepath.Join(pwd, "image")
 	return cmd, writePipe
 }
 

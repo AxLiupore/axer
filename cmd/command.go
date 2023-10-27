@@ -10,7 +10,7 @@ import (
 
 var runCommand = cli.Command{
 	Name:  "run",
-	Usage: "Create a container with namespace and cgroups limit ie: axer run -ti [image] [command]",
+	Usage: "Create a container with namespace and cgroups limit ie: axer run -it [image] [command]",
 	Flags: []cli.Flag{
 		cli.BoolFlag{
 			Name:  "it",
