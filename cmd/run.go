@@ -39,6 +39,8 @@ func Run(tty bool, cmdArray []string, limit *cgroup2.Limit) {
 	// send command args to NewParentProcess
 	sendInitCommand(cmdArray, writePipe)
 	_ = parent.Wait()
+	pwd, err := os.Getwd()
+	container.DeleteWorkSpace(pwd)
 }
 
 // set init command
