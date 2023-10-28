@@ -8,6 +8,17 @@ import (
 
 const usage = "This axer is a simple container runtime implementation. The purpose of this project is to learn how to docker works and how to write a docker by myself. Enjoy it, just for fun."
 
+type CustomFormatter struct{}
+
+func (f *CustomFormatter) Format(entry *logrus.Entry) ([]byte, error) {
+	timestamp := entry.Time.Format("2006-01-02 15:04:05")
+	level := entry.Level.String()
+	msg := entry.Message
+
+	logLine := "[" + timestamp + "] [" + level + "] " + msg + "\n"
+	return []byte(logLine), nil
+}
+
 func main() {
 	app := cli.NewApp()
 	app.Name = "axer"
@@ -21,7 +32,7 @@ func main() {
 
 	// before app run this func
 	app.Before = func(ctx *cli.Context) error {
-		logrus.SetFormatter(&logrus.JSONFormatter{})
+		logrus.SetFormatter(&CustomFormatter{})
 		logrus.SetOutput(os.Stdout)
 		return nil
 	}

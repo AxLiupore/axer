@@ -9,7 +9,7 @@ import (
 )
 
 // NewParentProcess create a new process and configuration to container init process
-func NewParentProcess(tty bool) (*exec.Cmd, *os.File) {
+func NewParentProcess(tty bool, volume string) (*exec.Cmd, *os.File) {
 	readPipe, writePipe, err := NewPipe()
 	if err != nil {
 		logrus.Errorf("New pipe error %v", err)
@@ -28,7 +28,7 @@ func NewParentProcess(tty bool) (*exec.Cmd, *os.File) {
 	// ParentProcess send readPipe to childProcess
 	cmd.ExtraFiles = []*os.File{readPipe}
 	pwd, err := os.Getwd()
-	err = NewWorkSpace(pwd)
+	err = NewWorkSpace(pwd, volume)
 	if err != nil {
 		return nil, nil
 	}

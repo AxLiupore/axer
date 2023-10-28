@@ -28,6 +28,10 @@ var runCommand = cli.Command{
 			Name:  "c",
 			Usage: "cpu limit",
 		},
+		cli.StringFlag{
+			Name:  "v",
+			Usage: "volume",
+		},
 	},
 	Action: func(ctx *cli.Context) error {
 		if len(ctx.Args()) < 1 {
@@ -43,8 +47,9 @@ var runCommand = cli.Command{
 			CPUSet: ctx.String("cs"),
 			Memory: ctx.String("m"),
 		}
+		volume := ctx.String("v")
 		// run this cmd
-		Run(tty, cmdArray, limit)
+		Run(tty, cmdArray, limit, volume)
 		return nil
 	},
 }

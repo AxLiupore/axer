@@ -1,10 +1,12 @@
 package container
 
 import (
+	"errors"
 	"github.com/sirupsen/logrus"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 )
 
 func createPath(path string) error {
@@ -15,7 +17,7 @@ func createPath(path string) error {
 }
 
 // NewWorkSpace Create an Overlay2 filesystem as container root workspace
-func NewWorkSpace(rootPath string) error {
+func NewWorkSpace(rootPath, volume string) error {
 	workerPath := filepath.Join(rootPath, "worker")
 	if err := createPath(workerPath); err != nil {
 		return err
@@ -32,11 +34,23 @@ func NewWorkSpace(rootPath string) error {
 	if err != nil {
 		return err
 	}
+	if volume != "" {
+		volumes := volumePathExtract(volume)
+		if len(volumes) == 2 && volumes[0] != "" && volumes[1] != "" {
+			if err := mountVolume(workerPath, volumes); err != nil {
+				return err
+			}
+		} else {
+			logrus.Infof("volume parameter input is not correct.")
+			return errors.New("volume parameter input is not correct")
+		}
+	}
 	return nil
 }
 
 // createLower use busybox at the lower layer of the overlay filesystem
 func createLower(rootPath, workerPath string) error {
+	logrus.Infof("create Lowerlay")
 	imagePath := filepath.Join(rootPath, "image", "image.tar")
 	lowerPath := filepath.Join(workerPath, "lower")
 	if err := createPath(lowerPath); err != nil {
@@ -51,6 +65,7 @@ func createLower(rootPath, workerPath string) error {
 
 // createDirs create overlayfs need dirs
 func createDirs(workerPath string) error {
+	logrus.Infof("create Upper and Work dir")
 	upperPath := filepath.Join(workerPath, "upper")
 	workPath := filepath.Join(workerPath, "work")
 	if err := createPath(upperPath); err != nil {
@@ -76,6 +91,7 @@ func mountOverlayFS(workerPath string) error {
 	dirs := "lowerdir=" + lowerDir + ",upperdir=" + upperDir + ",workdir=" + workDir
 	// Full command: mount -t overlay overlay -o lowerdir=/worker/lower,upperdir=/worker/upper,workdir=/worker/work /worker/container
 	cmd := exec.Command("mount", "-t", "overlay", "overlay", "-o", dirs, mountPath)
+	logrus.Infof("mountOverlayFS cmd:%s", cmd.String())
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	// Execute the command
@@ -86,8 +102,15 @@ func mountOverlayFS(workerPath string) error {
 }
 
 // DeleteWorkSpace Delete the overlay filesystem while container exit
-func DeleteWorkSpace(rootPath string) {
+func DeleteWorkSpace(rootPath, volume string) {
 	workerPath := filepath.Join(rootPath, "worker")
+	if volume != "" {
+		volumes := volumePathExtract(volume)
+		length := len(volumes)
+		if length == 2 && volumes[0] != "" && volumes[1] != "" {
+			umountVolume(workerPath, volumes)
+		}
+	}
 	umountOverlayFS(workerPath)
 	deleteDirs(workerPath)
 }
@@ -108,5 +131,47 @@ func umountOverlayFS(workerPath string) {
 	}
 	if err := os.RemoveAll(mountPath); err != nil {
 		logrus.Errorf("Remove dir %s error %v", mountPath, err)
+	}
+}
+
+// Parsing the volume directory by splitting it with a colon, for example, -v /tmp:/tmp
+func volumePathExtract(volume string) []string {
+	var volumes []string
+	volumes = strings.Split(volume, ":")
+	return volumes
+}
+
+func mountVolume(workerPath string, volumes []string) error {
+	mountPath := filepath.Join(workerPath, "container")
+	// The 0th element represents the host machine directory
+	parentPath := volumes[0]
+	if err := createPath(parentPath); err != nil {
+		return nil
+	}
+	// The 1st element represents the container directory
+	containerPath := volumes[1]
+	// Concatenate and create the corresponding container directory
+	containerVolumePath := filepath.Join(mountPath, containerPath)
+	if err := createPath(containerVolumePath); err != nil {
+		return err
+	}
+	cmd := exec.Command("mount", "-o", "bind", parentPath, containerVolumePath)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if err := cmd.Run(); err != nil {
+		logrus.Errorf("mount volume failed. %v", err)
+		return err
+	}
+	return nil
+}
+
+func umountVolume(workerPath string, volumeURLs []string) {
+	mountPath := filepath.Join(workerPath, "container")
+	containerPath := filepath.Join(mountPath, volumeURLs[1])
+	cmd := exec.Command("umount", containerPath)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if err := cmd.Run(); err != nil {
+		logrus.Errorf("Umount volume failed. %v", err)
 	}
 }

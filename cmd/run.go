@@ -8,8 +8,8 @@ import (
 	"strings"
 )
 
-func Run(tty bool, cmdArray []string, limit *cgroup2.Limit) {
-	parent, writePipe := container.NewParentProcess(tty)
+func Run(tty bool, cmdArray []string, limit *cgroup2.Limit, volume string) {
+	parent, writePipe := container.NewParentProcess(tty, volume)
 	if parent == nil {
 		logrus.Errorf("New parent process error")
 		return
@@ -40,7 +40,7 @@ func Run(tty bool, cmdArray []string, limit *cgroup2.Limit) {
 	sendInitCommand(cmdArray, writePipe)
 	_ = parent.Wait()
 	pwd, err := os.Getwd()
-	container.DeleteWorkSpace(pwd)
+	container.DeleteWorkSpace(pwd, volume)
 }
 
 // set init command
