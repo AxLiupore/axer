@@ -31,7 +31,6 @@ func RunContainerInitProcess() error {
 		logrus.Errorf("Exec loop path error %v", err)
 		return err
 	}
-	logrus.Infof("Find path %s", path)
 
 	if err := syscall.Exec(path, cmdArray, os.Environ()); err != nil {
 		logrus.Errorf(err.Error())
@@ -60,12 +59,10 @@ func setMount() error {
 
 	// Get the current working directory, which is set by the parent process itself
 	pwd, err := os.Getwd()
-	logrus.Infof("workPath: %s", pwd)
 	if err != nil {
 		logrus.Errorf("Get current location error %v", err)
 		return err
 	}
-	logrus.Infof("Current location is %s", pwd)
 
 	err = pivotRoot(pwd)
 	if err != nil {

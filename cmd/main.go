@@ -1,12 +1,11 @@
 package main
 
 import (
+	"axer/cmd/main/constant"
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 	"os"
 )
-
-const usage = "This axer is a simple container runtime implementation. The purpose of this project is to learn how to docker works and how to write a docker by myself. Enjoy it, just for fun."
 
 type CustomFormatter struct{}
 
@@ -21,13 +20,14 @@ func (f *CustomFormatter) Format(entry *logrus.Entry) ([]byte, error) {
 
 func main() {
 	app := cli.NewApp()
-	app.Name = "axer"
-	app.Usage = usage
+	app.Name = constant.Name
+	app.Usage = constant.Usage
 
 	// define command
 	app.Commands = []cli.Command{
 		runCommand,
 		initCommand,
+		commitCommand,
 	}
 
 	// before app run this func

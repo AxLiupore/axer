@@ -1,14 +1,16 @@
 package main
 
 import (
-	cgroup2 "axer/cmd/main/cgroup"
+	"axer/cmd/main/cgroup"
 	"axer/cmd/main/container"
+	"fmt"
 	"github.com/sirupsen/logrus"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
-func Run(tty bool, cmdArray []string, limit *cgroup2.Limit, volume string) {
+func Run(tty bool, cmdArray []string, limit *cgroup.Limit, volume string) {
 	parent, writePipe := container.NewParentProcess(tty, volume)
 	if parent == nil {
 		logrus.Errorf("New parent process error")
@@ -18,12 +20,12 @@ func Run(tty bool, cmdArray []string, limit *cgroup2.Limit, volume string) {
 		logrus.Error(err)
 	}
 	// create a builder
-	builder, err := cgroup2.NewBuilder().WithCPU().WithCPUSet().WithMemory().FilterByEnv()
+	builder, err := cgroup.NewBuilder().WithCPU().WithCPUSet().WithMemory().FilterByEnv()
 	if err != nil {
 		return
 	}
 	cg, err := builder.Build("axer")
-	defer func(cg *cgroup2.Cgroup) {
+	defer func(cg *cgroup.Cgroup) {
 		_ = cg.Destroy()
 	}(&cg)
 	// set cgroup resource limit
@@ -38,6 +40,11 @@ func Run(tty bool, cmdArray []string, limit *cgroup2.Limit, volume string) {
 	}
 	// send command args to NewParentProcess
 	sendInitCommand(cmdArray, writePipe)
+
+	rootPath, _ := os.Getwd()
+	txt, _ := os.ReadFile(filepath.Join(rootPath, "util", "banner.txt"))
+	fmt.Println(string(txt))
+
 	_ = parent.Wait()
 	pwd, err := os.Getwd()
 	container.DeleteWorkSpace(pwd, volume)
@@ -46,7 +53,6 @@ func Run(tty bool, cmdArray []string, limit *cgroup2.Limit, volume string) {
 // set init command
 func sendInitCommand(cmdArray []string, writePipe *os.File) {
 	command := strings.Join(cmdArray, " ")
-	logrus.Infof("command all is %s", command)
 	_, _ = writePipe.WriteString(command)
 	_ = writePipe.Close()
 }

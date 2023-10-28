@@ -15,6 +15,7 @@ func NewParentProcess(tty bool, volume string) (*exec.Cmd, *os.File) {
 		logrus.Errorf("New pipe error %v", err)
 		return nil, nil
 	}
+
 	cmd := exec.Command("/proc/self/exe", "init")
 	cmd.SysProcAttr = &syscall.SysProcAttr{
 		Cloneflags: syscall.CLONE_NEWNS | syscall.CLONE_NEWCGROUP | syscall.CLONE_NEWNET | syscall.CLONE_NEWPID | syscall.CLONE_NEWIPC | syscall.CLONE_NEWUTS,
@@ -25,6 +26,7 @@ func NewParentProcess(tty bool, volume string) (*exec.Cmd, *os.File) {
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 	}
+
 	// ParentProcess send readPipe to childProcess
 	cmd.ExtraFiles = []*os.File{readPipe}
 	pwd, err := os.Getwd()

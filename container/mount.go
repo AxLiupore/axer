@@ -1,6 +1,7 @@
 package container
 
 import (
+	"axer/cmd/main/constant"
 	"errors"
 	"github.com/sirupsen/logrus"
 	"os"
@@ -10,7 +11,7 @@ import (
 )
 
 func createPath(path string) error {
-	if err := os.MkdirAll(path, 0777); err != nil {
+	if err := os.MkdirAll(path, constant.Perm0777); err != nil {
 		logrus.Errorf("MkdirAll %s error %v", path, err)
 	}
 	return nil
@@ -18,7 +19,7 @@ func createPath(path string) error {
 
 // NewWorkSpace Create an Overlay2 filesystem as container root workspace
 func NewWorkSpace(rootPath, volume string) error {
-	workerPath := filepath.Join(rootPath, "worker")
+	workerPath := filepath.Join(rootPath, constant.WorkerName)
 	if err := createPath(workerPath); err != nil {
 		return err
 	}
@@ -52,7 +53,8 @@ func NewWorkSpace(rootPath, volume string) error {
 func createLower(rootPath, workerPath string) error {
 	logrus.Infof("create Lowerlay")
 	imagePath := filepath.Join(rootPath, "image", "image.tar")
-	lowerPath := filepath.Join(workerPath, "lower")
+	lowerPath := filepath.Join(workerPath, constant.LowerName)
+
 	if err := createPath(lowerPath); err != nil {
 		return err
 	}
@@ -66,8 +68,9 @@ func createLower(rootPath, workerPath string) error {
 // createDirs create overlayfs need dirs
 func createDirs(workerPath string) error {
 	logrus.Infof("create Upper and Work dir")
-	upperPath := filepath.Join(workerPath, "upper")
-	workPath := filepath.Join(workerPath, "work")
+	upperPath := filepath.Join(workerPath, constant.UpperName)
+	workPath := filepath.Join(workerPath, constant.WorkName)
+
 	if err := createPath(upperPath); err != nil {
 		return err
 	}
@@ -80,14 +83,16 @@ func createDirs(workerPath string) error {
 // mount overlay file system
 func mountOverlayFS(workerPath string) error {
 	// Create the corresponding mount directory
-	mountPath := filepath.Join(workerPath, "container")
+	mountPath := filepath.Join(workerPath, constant.ContainerName)
 	if err := createPath(mountPath); err != nil {
 		return nil
 	}
+
 	// e.g. lowerdir=/worker/lower,upperdir=/worker/upper,workdir=/worker/work
-	lowerDir := filepath.Join(workerPath, "lower")
-	upperDir := filepath.Join(workerPath, "upper")
-	workDir := filepath.Join(workerPath, "work")
+	lowerDir := filepath.Join(workerPath, constant.LowerName)
+	upperDir := filepath.Join(workerPath, constant.UpperName)
+	workDir := filepath.Join(workerPath, constant.WorkName)
+
 	dirs := "lowerdir=" + lowerDir + ",upperdir=" + upperDir + ",workdir=" + workDir
 	// Full command: mount -t overlay overlay -o lowerdir=/worker/lower,upperdir=/worker/upper,workdir=/worker/work /worker/container
 	cmd := exec.Command("mount", "-t", "overlay", "overlay", "-o", dirs, mountPath)
@@ -103,7 +108,7 @@ func mountOverlayFS(workerPath string) error {
 
 // DeleteWorkSpace Delete the overlay filesystem while container exit
 func DeleteWorkSpace(rootPath, volume string) {
-	workerPath := filepath.Join(rootPath, "worker")
+	workerPath := filepath.Join(rootPath, constant.WorkerName)
 	if volume != "" {
 		volumes := volumePathExtract(volume)
 		length := len(volumes)
@@ -122,7 +127,7 @@ func deleteDirs(workerPath string) {
 }
 
 func umountOverlayFS(workerPath string) {
-	mountPath := filepath.Join(workerPath, "container")
+	mountPath := filepath.Join(workerPath, constant.ContainerName)
 	cmd := exec.Command("umount", mountPath)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -142,7 +147,7 @@ func volumePathExtract(volume string) []string {
 }
 
 func mountVolume(workerPath string, volumes []string) error {
-	mountPath := filepath.Join(workerPath, "container")
+	mountPath := filepath.Join(workerPath, constant.ContainerName)
 	// The 0th element represents the host machine directory
 	parentPath := volumes[0]
 	if err := createPath(parentPath); err != nil {
@@ -155,6 +160,7 @@ func mountVolume(workerPath string, volumes []string) error {
 	if err := createPath(containerVolumePath); err != nil {
 		return err
 	}
+
 	cmd := exec.Command("mount", "-o", "bind", parentPath, containerVolumePath)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -166,7 +172,7 @@ func mountVolume(workerPath string, volumes []string) error {
 }
 
 func umountVolume(workerPath string, volumeURLs []string) {
-	mountPath := filepath.Join(workerPath, "container")
+	mountPath := filepath.Join(workerPath, constant.ContainerName)
 	containerPath := filepath.Join(mountPath, volumeURLs[1])
 	cmd := exec.Command("umount", containerPath)
 	cmd.Stdout = os.Stdout
