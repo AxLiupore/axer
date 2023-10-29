@@ -41,6 +41,9 @@ func RunContainerInitProcess() error {
 // Read parameters passed from parent process
 func readUserCommand() []string {
 	pipe := os.NewFile(uintptr(3), "pipe")
+	defer func(pipe *os.File) {
+		_ = pipe.Close()
+	}(pipe)
 	msg, err := io.ReadAll(pipe)
 	if err != nil {
 		logrus.Errorf("init read pipe error %v", err)

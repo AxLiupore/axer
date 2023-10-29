@@ -45,9 +45,13 @@ func Run(tty bool, cmdArray []string, limit *cgroup.Limit, volume string) {
 	txt, _ := os.ReadFile(filepath.Join(rootPath, "util", "banner.txt"))
 	fmt.Println(string(txt))
 
-	_ = parent.Wait()
-	pwd, err := os.Getwd()
-	container.DeleteWorkSpace(pwd, volume)
+	// if tty parent process block
+	if tty {
+		_ = parent.Wait()
+	}
+
+	//pwd, err := os.Getwd()
+	//container.DeleteWorkSpace(pwd, volume)
 }
 
 // set init command

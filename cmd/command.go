@@ -32,6 +32,10 @@ var runCommand = cli.Command{
 			Name:  "v",
 			Usage: "volume",
 		},
+		cli.BoolFlag{
+			Name:  "d",
+			Usage: "detach container",
+		},
 	},
 	Action: func(ctx *cli.Context) error {
 		if len(ctx.Args()) < 1 {
@@ -41,7 +45,12 @@ var runCommand = cli.Command{
 		for _, arg := range ctx.Args() {
 			cmdArray = append(cmdArray, arg)
 		}
+		// Only one of tty and detach can take effect at the same time
 		tty := ctx.Bool("it")
+		detach := ctx.Bool("d")
+		if tty && detach {
+			return fmt.Errorf("it and d paramter can not both provided")
+		}
 		limit := &cgroup.Limit{
 			CPU:    ctx.String("c"),
 			CPUSet: ctx.String("cs"),
