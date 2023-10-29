@@ -16,6 +16,10 @@ var runCommand = cli.Command{
 			Name:  "it",
 			Usage: "enable",
 		},
+		cli.BoolFlag{
+			Name:  "d",
+			Usage: "detach container",
+		},
 		cli.StringFlag{
 			Name:  "m",
 			Usage: "memory limit",
@@ -32,9 +36,9 @@ var runCommand = cli.Command{
 			Name:  "v",
 			Usage: "volume",
 		},
-		cli.BoolFlag{
-			Name:  "d",
-			Usage: "detach container",
+		cli.StringFlag{
+			Name:  "name",
+			Usage: "container name",
 		},
 	},
 	Action: func(ctx *cli.Context) error {
@@ -51,14 +55,17 @@ var runCommand = cli.Command{
 		if tty && detach {
 			return fmt.Errorf("it and d paramter can not both provided")
 		}
+
 		limit := &cgroup.Limit{
 			CPU:    ctx.String("c"),
 			CPUSet: ctx.String("cs"),
 			Memory: ctx.String("m"),
 		}
+
 		volume := ctx.String("v")
+		name := ctx.String("name")
 		// run this cmd
-		Run(tty, cmdArray, limit, volume)
+		Run(tty, cmdArray, limit, volume, name)
 		return nil
 	},
 }
@@ -82,6 +89,15 @@ var commitCommand = cli.Command{
 		}
 		imageName := ctx.Args().Get(0)
 		commitContainer(imageName)
+		return nil
+	},
+}
+
+var psCommand = cli.Command{
+	Name:  "ps",
+	Usage: "list all the containers",
+	Action: func(ctx *cli.Context) error {
+		PsContainers()
 		return nil
 	},
 }

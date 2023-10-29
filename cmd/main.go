@@ -28,6 +28,7 @@ func main() {
 		runCommand,
 		initCommand,
 		commitCommand,
+		psCommand,
 	}
 
 	// before app run this func
