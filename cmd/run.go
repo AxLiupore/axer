@@ -17,7 +17,7 @@ import (
 
 // Run container
 func Run(tty bool, cmdArray []string, limit *cgroup.Limit, volume, containerName string) {
-	parent, writePipe := container.NewParentProcess(tty, volume)
+	parent, writePipe := container.NewParentProcess(tty, volume, containerName)
 	if parent == nil {
 		logrus.Errorf("New parent process error")
 		return
@@ -60,8 +60,8 @@ func Run(tty bool, cmdArray []string, limit *cgroup.Limit, volume, containerName
 		deleteContainerInfo(containerName)
 	}
 
-	pwd, err := os.Getwd()
-	container.DeleteWorkSpace(pwd, volume)
+	//pwd, err := os.Getwd()
+	//container.DeleteWorkSpace(pwd, volume)
 }
 
 // set init command

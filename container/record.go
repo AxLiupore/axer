@@ -8,6 +8,7 @@ const (
 	InfoLocFormat = InfoLoc + "%s/"
 	ConfigName    = "config.json"
 	IDLength      = 32
+	LogFile       = "container.log"
 )
 
 // Info container info

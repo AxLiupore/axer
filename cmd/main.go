@@ -29,6 +29,7 @@ func main() {
 		initCommand,
 		commitCommand,
 		psCommand,
+		logCommand,
 	}
 
 	// before app run this func

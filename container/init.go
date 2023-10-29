@@ -32,7 +32,7 @@ func RunContainerInitProcess() error {
 		return err
 	}
 
-	if err := syscall.Exec(path, cmdArray, os.Environ()); err != nil {
+	if err := syscall.Exec(path, cmdArray[0:], os.Environ()); err != nil {
 		logrus.Errorf(err.Error())
 	}
 	return nil
